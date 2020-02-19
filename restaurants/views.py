@@ -1,20 +1,29 @@
 from django.shortcuts import render, redirect
-from .models import Restaurant, Item
+from .models import Restaurant, Item, FavoriteRestaurant
 from .forms import RestaurantForm, ItemForm, SignupForm, SigninForm
 from django.contrib.auth import login, authenticate, logout
 from django.db.models import Q
+from django.http import JsonResponse
 
 # This view will be used to favorite a restaurant
 def restaurant_favorite(request, restaurant_id):
-    
-    return
+    if request.user.is_authenticated:
+        restaurant = Restaurant.objects.get(id=restaurant_id)
+        fav = FavoriteRestaurant(restaurant=restaurant,user=request.user)
+        fav.save()
+        return redirect('restaurant-list')
+    else:
+        return redirect("signin")
 
-
-# This view will be used to display only restaurants a user has favorited
 def favorite_restaurants(request):
-    
-    return
-
+    if request.user.is_authenticated:
+        restaurants = FavoriteRestaurant.objects.filter(user=request.user)
+        context = {
+           "restaurants":restaurants
+        }
+        return render(request, 'fav_list.html' , context)
+    else:
+        return redirect("signin")
 
 def no_access(request):
     return render(request, 'no_access.html')
@@ -64,7 +73,7 @@ def restaurant_list(request):
     if query:
         # Not Bonus. Querying through a single field.
         # restaurants = restaurants.filter(name__icontains=query)
-        
+
         # Bonus. Querying through multiple fields.
         restaurants = restaurants.filter(
             Q(name__icontains=query)|
